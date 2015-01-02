@@ -1,6 +1,7 @@
 package org.jtc.hshell.shell
 
 import org.jtc.hshell.filesystem.{LocalFilesystem, HadoopFilesystem}
+import org.parboiled2.ParseError
 
 /**
  * Hadoop interaction:
@@ -40,8 +41,9 @@ class Shell {
         c.command match {
           case "lls" => println(localFilesystem.listFiles())
           case "lcd" => localFilesystem.changeWorkingDirectory(c.arguments.head)
+          case "lpwd" => println(localFilesystem.workingDirectory)
         }
-      }.recover { case e:RuntimeException => e.printStackTrace() }
+      }.recover { case e:ParseError => println(e.formatTraces) }
 
       // identify command function
       // execute and report result

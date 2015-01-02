@@ -16,11 +16,13 @@ class CommandParser(val input: ParserInput) extends Parser {
 
   def commandName = rule { capture(oneOrMore(AlphaNum)) ~> (_.toString.replace(" ", "")) }
 
-  def modifiers = rule { zeroOrMore(ch('-') ~ capture(characterString)).separatedBy(Space) }
+  def modifiers = rule { zeroOrMore(WhiteSpace ~ ch('-') ~ capture(AlphaNumericString) ~ WhiteSpace).separatedBy(Space) }
 
-  def arguments = rule { zeroOrMore(capture(characterString)).separatedBy(Space) }
+  def arguments = rule { zeroOrMore(WhiteSpace ~ capture(CharacterString) ~ WhiteSpace).separatedBy(Space) }
 
-  def characterString = rule { oneOrMore(AlphaNum) }
+  def AlphaNumericString = rule { oneOrMore(AlphaNum) }
+
+  def CharacterString = rule { oneOrMore(Visible) }
 
   def WhiteSpace = rule { zeroOrMore(WhiteSpaceChar) }
 
