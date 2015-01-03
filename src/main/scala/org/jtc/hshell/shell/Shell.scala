@@ -2,6 +2,7 @@ package org.jtc.hshell.shell
 
 import org.jtc.hshell.filesystem.{LocalFilesystem, HadoopFilesystem}
 import org.parboiled2.ParseError
+import org.jtc.hshell.command.CommandParser.Command
 
 /**
  * Hadoop interaction:
@@ -29,18 +30,24 @@ class Shell {
   val localFilesystem = new LocalFilesystem
   val hdfs = new HadoopFilesystem
   val prompt = new Prompt(shouldExit = { s: String => s.startsWith("exit") })
+  val lpwd: PartialFunction[Command, Option[String]] = { case c:Command if c.command == "lpwd" => Option(localFilesystem.workingDirectory) }
+  val lls: PartialFunction[Command, Option[String]] = { case c:Command if c.command == "lls" => Option(localFilesystem.list(c.arguments.headOption)) }
+  val lcd: PartialFunction[Command, Option[String]] = { case c:Command if c.command == "lcd" => localFilesystem.changeWorkingDirectory(c.arguments.head) ; None }
+  val commandHandlers = Iterable[PartialFunction[Command, Option[String]]](lpwd, lls, lcd)
 
   def start(): Unit = {
-
+    def executeHandler(c: Command)(handler: PartialFunction[Command, Option[String]]) {
+      if (handler.isDefinedAt(c)) {
+        val result = handler(c)
+        result.foreach(println)
+      }
+    }
     prompt.eachLine(createShellPrompt) { line =>
       val command = parseCommand(line)
 
       command.map { c =>
-        c.command match {
-          case "lpwd" => println(localFilesystem.workingDirectory)
-          case "lls" => println(localFilesystem.list(c.arguments.headOption))
-          case "lcd" => localFilesystem.changeWorkingDirectory(c.arguments.head)
-        }
+        val maybeExecute = executeHandler(c) _
+        commandHandlers.foreach(maybeExecute)
       }.recover { case e:ParseError => println(e.formatTraces) }
     }
   }
