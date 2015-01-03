@@ -4,7 +4,7 @@ import org.parboiled2._
 import CharPredicate._
 
 object CommandParser {
-  case class Command(command: String, modifiers: Seq[String], arguments: Seq[String])
+  case class Command(command: String, modifiers: Seq[String] = Nil, arguments: Seq[String] = Nil)
 }
 
 class CommandParser(val input: ParserInput) extends Parser {
@@ -16,9 +16,9 @@ class CommandParser(val input: ParserInput) extends Parser {
 
   def commandName = rule { capture(oneOrMore(AlphaNum)) ~> (_.toString.replace(" ", "")) }
 
-  def modifiers = rule { zeroOrMore(WhiteSpace ~ ch('-') ~ capture(AlphaNumericString) ~ WhiteSpace).separatedBy(Space) }
+  def modifiers = rule { zeroOrMore(ch('-') ~ capture(AlphaNumericString)).separatedBy(WhiteSpace) }
 
-  def arguments = rule { zeroOrMore(WhiteSpace ~ capture(CharacterString) ~ WhiteSpace).separatedBy(Space) }
+  def arguments = rule { zeroOrMore(capture(CharacterString)).separatedBy(WhiteSpace) }
 
   def AlphaNumericString = rule { oneOrMore(AlphaNum) }
 
@@ -26,8 +26,6 @@ class CommandParser(val input: ParserInput) extends Parser {
 
   def WhiteSpace = rule { zeroOrMore(WhiteSpaceChar) }
 
-  def Space = rule { ch(' ') }
-
-  def OptionalSpace = rule { optional(Space) }
+  def OptionalSpace = rule { optional(ch(' ')) }
 
 }

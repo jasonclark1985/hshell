@@ -28,25 +28,22 @@ class Shell {
   val parseCommand = new ParseCommand
   val localFilesystem = new LocalFilesystem
   val hdfs = new HadoopFilesystem
-  val prompt = new Prompt({s => s.startsWith("exit") })
+  val prompt = new Prompt(shouldExit = { s: String => s.startsWith("exit") })
 
   def start(): Unit = {
-    // read shell input
-    prompt.eachLine { line =>
+
+    prompt.eachLine(createShellPrompt) { line =>
       val command = parseCommand(line)
-      println(s"Result of command parsing: $command")
 
       command.map { c =>
-        println(s"Executing command: ${c.command}")
         c.command match {
-          case "lls" => println(localFilesystem.listFiles())
-          case "lcd" => localFilesystem.changeWorkingDirectory(c.arguments.head)
           case "lpwd" => println(localFilesystem.workingDirectory)
+          case "lls" => println(localFilesystem.list(c.arguments.headOption))
+          case "lcd" => localFilesystem.changeWorkingDirectory(c.arguments.head)
         }
       }.recover { case e:ParseError => println(e.formatTraces) }
-
-      // identify command function
-      // execute and report result
     }
   }
+
+  private def createShellPrompt: String = s"[${localFilesystem.workingDirectory}]$$ "
 }
